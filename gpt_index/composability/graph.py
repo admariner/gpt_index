@@ -100,7 +100,7 @@ class ComposableGraph:
         self._embed_model = embed_model or OpenAIEmbedding()
 
     @classmethod
-    def build_from_index(self, index: BaseGPTIndex) -> "ComposableGraph":
+    def build_from_index(cls, index: BaseGPTIndex) -> "ComposableGraph":
         """Build from index."""
         return ComposableGraph(
             index.docstore,

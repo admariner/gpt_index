@@ -31,6 +31,5 @@ class MboxReader(BaseReader):
                 if filename.endswith(".mbox"):
                     filepath = os.path.join(dirpath, filename)
                     content = MboxParser(**load_kwargs).parse_file(Path(filepath))
-                    for msg in content:
-                        docs.append(Document(msg))
+                    docs.extend(Document(msg) for msg in content)
         return docs

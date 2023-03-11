@@ -84,11 +84,7 @@ def _get_node_text_embedding_similarities(
     text_similarity_map["This is another test."] = 0.7
     text_similarity_map["This is a test v2."] = 0.6
 
-    similarities = []
-    for node in nodes:
-        similarities.append(text_similarity_map[node.get_text()])
-
-    return similarities
+    return [text_similarity_map[node.get_text()] for node in nodes]
 
 
 @patch_common

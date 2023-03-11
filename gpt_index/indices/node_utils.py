@@ -24,17 +24,16 @@ def get_text_splits_from_document(
     text_splits = []
     if isinstance(text_splitter, TokenTextSplitter):
         # use this to extract extra information about the chunks
-        text_splits = text_splitter.split_text_with_overlaps(
+        return text_splitter.split_text_with_overlaps(
             document.get_text(),
-            extra_info_str=document.extra_info_str if include_extra_info else None,
+            extra_info_str=document.extra_info_str
+            if include_extra_info
+            else None,
         )
-    else:
-        text_chunks = text_splitter.split_text(
-            document.get_text(),
-        )
-        text_splits = [TextSplit(text_chunk=text_chunk) for text_chunk in text_chunks]
-
-    return text_splits
+    text_chunks = text_splitter.split_text(
+        document.get_text(),
+    )
+    return [TextSplit(text_chunk=text_chunk) for text_chunk in text_chunks]
 
 
 def get_nodes_from_document(

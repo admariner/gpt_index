@@ -29,11 +29,11 @@ class SlackReader(BaseReader):
             )
         if slack_token is None:
             slack_token = os.environ["SLACK_BOT_TOKEN"]
-            if slack_token is None:
-                raise ValueError(
-                    "Must specify `slack_token` or set environment "
-                    "variable `SLACK_BOT_TOKEN`."
-                )
+        if slack_token is None:
+            raise ValueError(
+                "Must specify `slack_token` or set environment "
+                "variable `SLACK_BOT_TOKEN`."
+            )
         self.client = WebClient(token=slack_token)
         res = self.client.api_test()
         if not res["ok"]:
@@ -54,9 +54,7 @@ class SlackReader(BaseReader):
                     channel=channel_id, ts=message_ts, cursor=next_cursor
                 )
                 messages = result["messages"]
-                for message in messages:
-                    messages_text.append(message["text"])
-
+                messages_text.extend(message["text"] for message in messages)
                 if not result["has_more"]:
                     break
 
@@ -64,13 +62,11 @@ class SlackReader(BaseReader):
             except SlackApiError as e:
                 if e.response["error"] == "ratelimited":
                     logging.error(
-                        "Rate limit error reached, sleeping for: {} seconds".format(
-                            e.response.headers["retry-after"]
-                        )
+                        f'Rate limit error reached, sleeping for: {e.response.headers["retry-after"]} seconds'
                     )
                     time.sleep(int(e.response.headers["retry-after"]))
                 else:
-                    logging.error("Error parsing conversation replies: {}".format(e))
+                    logging.error(f"Error parsing conversation replies: {e}")
 
         return "\n\n".join(messages_text)
 
@@ -92,14 +88,11 @@ class SlackReader(BaseReader):
                 )
                 conversation_history = result["messages"]
                 # Print results
-                logging.info(
-                    "{} messages found in {}".format(len(conversation_history), id)
+                logging.info(f"{len(conversation_history)} messages found in {id}")
+                result_messages.extend(
+                    self._read_message(channel_id, message["ts"])
+                    for message in conversation_history
                 )
-                for message in conversation_history:
-                    result_messages.append(
-                        self._read_message(channel_id, message["ts"])
-                    )
-
                 if not result["has_more"]:
                     break
                 next_cursor = result["response_metadata"]["next_cursor"]
@@ -107,13 +100,11 @@ class SlackReader(BaseReader):
             except SlackApiError as e:
                 if e.response["error"] == "ratelimited":
                     logging.error(
-                        "Rate limit error reached, sleeping for: {} seconds".format(
-                            e.response.headers["retry-after"]
-                        )
+                        f'Rate limit error reached, sleeping for: {e.response.headers["retry-after"]} seconds'
                     )
                     time.sleep(int(e.response.headers["retry-after"]))
                 else:
-                    logging.error("Error parsing conversation replies: {}".format(e))
+                    logging.error(f"Error parsing conversation replies: {e}")
 
         return "\n\n".join(result_messages)
 

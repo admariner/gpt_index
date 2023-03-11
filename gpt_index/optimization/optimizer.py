@@ -67,18 +67,18 @@ class SentenceEmbeddingOptimizer(BaseTokenUsageOptimizer):
             query_bundle.embedding_strs
         )
         text_embeddings = self.embed_model._get_text_embeddings(split_text)
-        num_top_k = None
-        threshold = None
-        if self._percentile_cutoff is not None:
-            num_top_k = int(len(split_text) * self._percentile_cutoff)
-        if self._threshold_cutoff is not None:
-            threshold = self._threshold_cutoff
+        threshold = None if self._threshold_cutoff is None else self._threshold_cutoff
+        num_top_k = (
+            int(len(split_text) * self._percentile_cutoff)
+            if self._percentile_cutoff is not None
+            else None
+        )
         top_similarities, top_idxs = get_top_k_embeddings(
             query_embedding=query_embedding,
             embeddings=text_embeddings,
             similarity_fn=self.embed_model.similarity,
             similarity_top_k=num_top_k,
-            embedding_ids=[i for i in range(len(text_embeddings))],
+            embedding_ids=list(range(len(text_embeddings))),
             similarity_cutoff=threshold,
         )
         net_embed_tokens = self.embed_model.total_tokens_used - start_embed_token_ct

@@ -53,14 +53,7 @@ class PromptHelper:
         self.use_chunk_size_limit = chunk_size_limit is not None
 
     @classmethod
-    def from_llm_predictor(
-        self,
-        llm_predictor: LLMPredictor,
-        max_chunk_overlap: Optional[int] = None,
-        embedding_limit: Optional[int] = None,
-        chunk_size_limit: Optional[int] = None,
-        tokenizer: Optional[Callable[[str], List]] = None,
-    ) -> "PromptHelper":
+    def from_llm_predictor(cls, llm_predictor: LLMPredictor, max_chunk_overlap: Optional[int] = None, embedding_limit: Optional[int] = None, chunk_size_limit: Optional[int] = None, tokenizer: Optional[Callable[[str], List]] = None) -> "PromptHelper":
         """Create from llm predictor.
 
         This will autofill values like max_input_size and num_output.
@@ -74,7 +67,7 @@ class PromptHelper:
         if chunk_size_limit is not None:
             max_chunk_overlap = min(max_chunk_overlap, chunk_size_limit // 10)
 
-        return self(
+        return cls(
             llm_metadata.max_input_size,
             llm_metadata.num_output,
             max_chunk_overlap,
@@ -126,9 +119,7 @@ class PromptHelper:
         fmt_dict = {
             v: "" for v in prompt.input_variables if v not in prompt.partial_dict
         }
-        # TODO: change later from llm=None
-        empty_prompt_txt = prompt.format(llm=None, **fmt_dict)
-        return empty_prompt_txt
+        return prompt.format(llm=None, **fmt_dict)
 
     def get_biggest_prompt(self, prompts: List[Prompt]) -> Prompt:
         """Get biggest prompt.
@@ -140,10 +131,7 @@ class PromptHelper:
         """
         empty_prompt_txts = [self._get_empty_prompt_txt(prompt) for prompt in prompts]
         empty_prompt_txt_lens = [len(txt) for txt in empty_prompt_txts]
-        biggest_prompt = prompts[
-            empty_prompt_txt_lens.index(max(empty_prompt_txt_lens))
-        ]
-        return biggest_prompt
+        return prompts[empty_prompt_txt_lens.index(max(empty_prompt_txt_lens))]
 
     def get_text_splitter_given_prompt(
         self, prompt: Prompt, num_chunks: int, padding: Optional[int] = 1
@@ -159,21 +147,20 @@ class PromptHelper:
         chunk_size = self.get_chunk_size_given_prompt(
             empty_prompt_txt, num_chunks, padding=padding
         )
-        text_splitter = TokenTextSplitter(
+        return TokenTextSplitter(
             separator=self._separator,
             chunk_size=chunk_size,
             chunk_overlap=self.max_chunk_overlap // num_chunks,
             tokenizer=self._tokenizer,
         )
-        return text_splitter
 
     def get_text_from_nodes(
         self, node_list: List[Node], prompt: Optional[Prompt] = None
     ) -> str:
         """Get text from nodes. Used by tree-structured indices."""
-        num_nodes = len(node_list)
         text_splitter = None
         if prompt is not None:
+            num_nodes = len(node_list)
             # add padding given the newline character
             text_splitter = self.get_text_splitter_given_prompt(
                 prompt,
@@ -199,9 +186,9 @@ class PromptHelper:
         Used by tree-structured indices.
 
         """
-        num_nodes = len(node_list)
         text_splitter = None
         if prompt is not None:
+            num_nodes = len(node_list)
             # add padding given the number, and the newlines
             text_splitter = self.get_text_splitter_given_prompt(
                 prompt,
@@ -209,14 +196,12 @@ class PromptHelper:
                 padding=5,
             )
         results = []
-        number = 1
-        for node in node_list:
+        for number, node in enumerate(node_list, start=1):
             node_text = " ".join(node.get_text().splitlines())
             if text_splitter is not None:
                 node_text = text_splitter.truncate_text(node_text)
             text = f"({number}) {node_text}"
             results.append(text)
-            number += 1
         return "\n\n".join(results)
 
     def compact_text_chunks(self, prompt: Prompt, text_chunks: List[str]) -> List[str]:

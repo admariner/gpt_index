@@ -103,8 +103,8 @@ class LLMPredictor:
         # Note: we don't pass formatted_prompt to llm_chain.predict because
         # langchain does the same formatting under the hood
         full_prompt_args = prompt.get_full_format_args(prompt_args)
-        if self.retry_on_throttling:
-            llm_prediction = retry_on_exceptions_with_backoff(
+        return (
+            retry_on_exceptions_with_backoff(
                 lambda: llm_chain.predict(**full_prompt_args),
                 [
                     ErrorToRetry(openai.error.RateLimitError),
@@ -115,9 +115,9 @@ class LLMPredictor:
                     ),
                 ],
             )
-        else:
-            llm_prediction = llm_chain.predict(**full_prompt_args)
-        return llm_prediction
+            if self.retry_on_throttling
+            else llm_chain.predict(**full_prompt_args)
+        )
 
     def predict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
         """Predict the answer to a query.
@@ -173,9 +173,7 @@ class LLMPredictor:
     @property
     def last_token_usage(self) -> int:
         """Get the last token usage."""
-        if self._last_token_usage is None:
-            return 0
-        return self._last_token_usage
+        return 0 if self._last_token_usage is None else self._last_token_usage
 
     @last_token_usage.setter
     def last_token_usage(self, value: int) -> None:
@@ -195,9 +193,7 @@ class LLMPredictor:
         # Note: we don't pass formatted_prompt to llm_chain.predict because
         # langchain does the same formatting under the hood
         full_prompt_args = prompt.get_full_format_args(prompt_args)
-        # TODO: support retry on throttling
-        llm_prediction = await llm_chain.apredict(**full_prompt_args)
-        return llm_prediction
+        return await llm_chain.apredict(**full_prompt_args)
 
     async def apredict(self, prompt: Prompt, **prompt_args: Any) -> Tuple[str, str]:
         """Async predict the answer to a query.

@@ -9,7 +9,7 @@ DEFAULT_CLASS_PREFIX_STUB = "Gpt_Index"
 
 def get_default_class_prefix(current_id_set: Set = set()) -> str:
     """Get default class prefix."""
-    return DEFAULT_CLASS_PREFIX_STUB + "_" + str(get_new_int_id(current_id_set))
+    return f"{DEFAULT_CLASS_PREFIX_STUB}_{str(get_new_int_id(current_id_set))}"
 
 
 def validate_client(client: Any) -> None:
@@ -30,7 +30,7 @@ def validate_client(client: Any) -> None:
 def parse_get_response(response: Dict) -> Dict:
     """Parse get response from Weaviate."""
     if "errors" in response:
-        raise ValueError("Invalid query, got errors: {}".format(response["errors"]))
+        raise ValueError(f'Invalid query, got errors: {response["errors"]}')
     data_response = response["data"]
     if "Get" not in data_response:
         raise ValueError("Invalid query response, must be a Get query.")

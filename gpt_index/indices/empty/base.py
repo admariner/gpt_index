@@ -47,7 +47,7 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(cls) -> Dict[str, Type[BaseGPTIndexQuery]]:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTEmptyIndexQuery,
@@ -64,8 +64,7 @@ class GPTEmptyIndex(BaseGPTIndex[EmptyIndex]):
         Returns:
             IndexList: The created list index.
         """
-        index_struct = EmptyIndex()
-        return index_struct
+        return EmptyIndex()
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
         """Insert a document."""

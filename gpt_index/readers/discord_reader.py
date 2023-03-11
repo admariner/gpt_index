@@ -28,6 +28,8 @@ async def read_channel(
 
     messages: List[discord.Message] = []
 
+
+
     class CustomClient(discord.Client):
         async def on_ready(self) -> None:
             try:
@@ -39,11 +41,7 @@ async def read_channel(
                         f"Channel {channel_id} is not a text channel. "
                         "Only text channels are supported for now."
                     )
-                # thread_dict maps thread_id to thread
-                thread_dict = {}
-                for thread in channel.threads:
-                    thread_dict[thread.id] = thread
-
+                thread_dict = {thread.id: thread for thread in channel.threads}
                 async for msg in channel.history(
                     limit=limit, oldest_first=oldest_first
                 ):
@@ -55,9 +53,10 @@ async def read_channel(
                         ):
                             messages.append(thread_msg)
             except Exception as e:
-                logging.error("Encountered error: " + str(e))
+                logging.error(f"Encountered error: {str(e)}")
             finally:
                 await self.close()
+
 
     intents = discord.Intents.default()
     intents.message_content = True
@@ -90,11 +89,11 @@ class DiscordReader(BaseReader):
             )
         if discord_token is None:
             discord_token = os.environ["DISCORD_TOKEN"]
-            if discord_token is None:
-                raise ValueError(
-                    "Must specify `discord_token` or set environment "
-                    "variable `DISCORD_TOKEN`."
-                )
+        if discord_token is None:
+            raise ValueError(
+                "Must specify `discord_token` or set environment "
+                "variable `DISCORD_TOKEN`."
+            )
 
         self.discord_token = discord_token
 
@@ -102,12 +101,14 @@ class DiscordReader(BaseReader):
         self, channel_id: int, limit: Optional[int] = None, oldest_first: bool = True
     ) -> str:
         """Read channel."""
-        result = asyncio.get_event_loop().run_until_complete(
+        return asyncio.get_event_loop().run_until_complete(
             read_channel(
-                self.discord_token, channel_id, limit=limit, oldest_first=oldest_first
+                self.discord_token,
+                channel_id,
+                limit=limit,
+                oldest_first=oldest_first,
             )
         )
-        return result
 
     def load_data(
         self,

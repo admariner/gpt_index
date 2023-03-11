@@ -70,7 +70,7 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(cls) -> Dict[str, Type[BaseGPTIndexQuery]]:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTVectorStoreIndexQuery,
@@ -103,12 +103,10 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
 
-        result_tups = []
-        for id, embed in id_to_embed_map.items():
-            result_tups.append(
-                NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
-            )
-        return result_tups
+        return [
+            NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
+            for id, embed in id_to_embed_map.items()
+        ]
 
     async def _aget_node_embedding_results(
         self, nodes: List[Node], existing_node_ids: Set, doc_id: str
@@ -140,12 +138,10 @@ class GPTVectorStoreIndex(BaseGPTIndex[IndexDict]):
         for new_id, text_embedding in zip(result_ids, result_embeddings):
             id_to_embed_map[new_id] = text_embedding
 
-        result_tups = []
-        for id, embed in id_to_embed_map.items():
-            result_tups.append(
-                NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
-            )
-        return result_tups
+        return [
+            NodeEmbeddingResult(id, id_to_node_map[id], embed, doc_id=doc_id)
+            for id, embed in id_to_embed_map.items()
+        ]
 
     def _build_fallback_text_splitter(self) -> TextSplitter:
         # if not specified, use "smart" text splitter to ensure chunks fit in prompt

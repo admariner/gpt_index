@@ -77,18 +77,20 @@ class OpensearchVectorClient:
         }
         res = self._client.put(f"/{self._index}", json=idx_conf)
         # will 400 if the index already existed, so allow 400 errors right here
-        assert res.status_code == 200 or res.status_code == 400
+        assert res.status_code in [200, 400]
 
     def index_results(self, results: List[NodeEmbeddingResult]) -> List[str]:
         """Store results in the index."""
         bulk_req: List[Dict[Any, Any]] = []
         for result in results:
-            bulk_req.append({"index": {"_index": self._index, "_id": result.id}})
-            bulk_req.append(
-                {
-                    self._text_field: result.node.text,
-                    self._embedding_field: result.embedding,
-                }
+            bulk_req.extend(
+                (
+                    {"index": {"_index": self._index, "_id": result.id}},
+                    {
+                        self._text_field: result.node.text,
+                        self._embedding_field: result.embedding,
+                    },
+                )
             )
         bulk = "\n".join([json.dumps(v) for v in bulk_req]) + "\n"
         res = self._client.post(

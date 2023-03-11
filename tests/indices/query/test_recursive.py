@@ -101,7 +101,7 @@ def struct_kwargs() -> Tuple[Dict, List]:
 @pytest.fixture
 def documents() -> List[Document]:
     """Get documents."""
-    docs = [
+    return [
         Document("This is a test v2."),
         Document("This is another test."),
         Document("This is a test."),
@@ -111,7 +111,6 @@ def documents() -> List[Document]:
         Document("This is another test."),
         Document("This is a test v2."),
     ]
-    return docs
 
 
 @patch.object(TokenTextSplitter, "split_text", side_effect=mock_token_splitter_newline)
@@ -131,7 +130,7 @@ def test_recursive_query_list_tree(
     list_kwargs = index_kwargs["list"]
     tree_kwargs = index_kwargs["tree"]
     # try building a list for every two, then a tree
-    list1 = GPTListIndex(documents[0:2], **list_kwargs)
+    list1 = GPTListIndex(documents[:2], **list_kwargs)
     list1.set_text("summary1")
     list2 = GPTListIndex(documents[2:4], **list_kwargs)
     list2.set_text("summary2")
@@ -274,7 +273,7 @@ def test_recursive_query_list_table(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTListIndex(documents[0:2], **list_kwargs)
+    list1 = GPTListIndex(documents[:2], **list_kwargs)
     list1.set_text("foo bar")
     list2 = GPTListIndex(documents[2:4], **list_kwargs)
     list2.set_text("apple orange")
@@ -321,7 +320,7 @@ def test_recursive_query_list_tree_token_count(
     list_kwargs = index_kwargs["list"]
     tree_kwargs = index_kwargs["tree"]
     # try building a list for every two, then a tree
-    list1 = GPTListIndex(documents[0:2], **list_kwargs)
+    list1 = GPTListIndex(documents[:2], **list_kwargs)
     list1.set_text("summary1")
     list2 = GPTListIndex(documents[2:4], **list_kwargs)
     list2.set_text("summary2")
@@ -419,7 +418,7 @@ def test_recursive_query_vector_table(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex(documents[0:2], **list_kwargs)
+    list1 = GPTSimpleVectorIndex(documents[:2], **list_kwargs)
     list1.set_text("foo bar")
     list2 = GPTSimpleVectorIndex(documents[2:4], **list_kwargs)
     list2.set_text("apple orange")
@@ -519,7 +518,7 @@ def test_recursive_query_vector_table_query_configs(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex(documents[0:2], **list_kwargs)
+    list1 = GPTSimpleVectorIndex(documents[:2], **list_kwargs)
     list1.set_text("foo bar")
     list1.set_doc_id("vector1")
     list2 = GPTSimpleVectorIndex(documents[2:4], **list_kwargs)
@@ -576,7 +575,7 @@ def test_recursive_query_vector_table_async(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = GPTSimpleVectorIndex(documents[0:2], **list_kwargs)
+    list1 = GPTSimpleVectorIndex(documents[:2], **list_kwargs)
     list1.set_text("foo bar")
     list2 = GPTSimpleVectorIndex(documents[2:4], **list_kwargs)
     list2.set_text("apple orange")

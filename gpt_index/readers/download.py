@@ -73,7 +73,7 @@ def rewrite_exports(exports: List[str]) -> None:
             if line.startswith("__all__"):
                 continue
             f.write(line + os.linesep)
-        f.write(f"__all__ = {list(set(exports))}" + os.linesep)
+        f.write(f"__all__ = {list(set(exports))}{os.linesep}")
 
 
 def download_loader(

@@ -209,10 +209,7 @@ def _get_embeddings(
         "This is another test.": [0.0, 0.0, 1.0, 0.0, 0.0],
         "This is a test v2.": [0.0, 0.0, 0.0, 1.0, 0.0],
     }
-    node_embeddings = []
-    for node in nodes:
-        node_embeddings.append(text_embed_map[node.get_text()])
-
+    node_embeddings = [text_embed_map[node.get_text()] for node in nodes]
     return [1.0, 0, 0, 0, 0], node_embeddings
 
 
@@ -233,9 +230,7 @@ def test_query(
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
     assert str(response) == ("What is?:Hello world.")
-    node_info = (
-        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
-    )
+    node_info = response.source_nodes[0].node_info or {}
     assert node_info["start"] == 0
     assert node_info["end"] == 12
 
@@ -271,17 +266,13 @@ def test_index_overlap(
 
     query_str = "What is?"
     response = index.query(query_str, mode="default", **query_kwargs)
-    node_info_0 = (
-        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
-    )
+    node_info_0 = response.source_nodes[0].node_info or {}
     # First chunk: 'Hello world. This is a test 1. This is a test 2.
     # This is a test 3. This is a test 4. This is a'
     assert node_info_0["start"] == 0  # start at the start
     assert node_info_0["end"] == 94  # Length of first chunk.
 
-    node_info_1 = (
-        response.source_nodes[1].node_info if response.source_nodes[1].node_info else {}
-    )
+    node_info_1 = response.source_nodes[1].node_info or {}
     # Second chunk: 'This is a test 4. This is a test 5.\n'
     assert node_info_1["start"] == 67  # Position of second chunk relative to start
     assert node_info_1["end"] == 103  # End index
@@ -434,9 +425,7 @@ def test_async_query(
     task = index.aquery(query_str, mode="default", **query_kwargs)
     response = asyncio.run(task)
     assert str(response) == ("What is?:Hello world.")
-    node_info = (
-        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
-    )
+    node_info = response.source_nodes[0].node_info or {}
     assert node_info["start"] == 0
     assert node_info["end"] == 12
 
@@ -447,8 +436,6 @@ def test_async_query(
     task = index.aquery(query_str, mode="default", **query_kwargs_copy)
     response = asyncio.run(task)
     assert str(response) == ("What is?:Hello world.")
-    node_info = (
-        response.source_nodes[0].node_info if response.source_nodes[0].node_info else {}
-    )
+    node_info = response.source_nodes[0].node_info or {}
     assert node_info["start"] == 0
     assert node_info["end"] == 12

@@ -85,12 +85,12 @@ class GithubRepositoryReader(BaseReader):
         super().__init__()
         if github_token is None:
             github_token = os.getenv("GITHUB_TOKEN")
-            if github_token is None:
-                raise ValueError(
-                    "Please provide a Github token. "
-                    "You can do so by passing it as an argument or"
-                    + "by setting the GITHUB_TOKEN environment variable."
-                )
+        if github_token is None:
+            raise ValueError(
+                "Please provide a Github token. "
+                "You can do so by passing it as an argument or"
+                + "by setting the GITHUB_TOKEN environment variable."
+            )
 
         self._owner = owner
         self._repo = repo
@@ -219,14 +219,16 @@ class GithubRepositoryReader(BaseReader):
                     self._verbose,
                     "\t" * current_depth + f"recursing into {tree_obj.path}",
                 )
-                if self._ignore_directories is not None:
-                    if file_path in self._ignore_directories:
-                        print_if_verbose(
-                            self._verbose,
-                            "\t" * current_depth
-                            + f"ignoring tree {tree_obj.path} due to directory",
-                        )
-                        continue
+                if (
+                    self._ignore_directories is not None
+                    and file_path in self._ignore_directories
+                ):
+                    print_if_verbose(
+                        self._verbose,
+                        "\t" * current_depth
+                        + f"ignoring tree {tree_obj.path} due to directory",
+                    )
+                    continue
 
                 blobs_and_full_paths.extend(
                     await self._recurse_tree(tree_obj.sha, file_path, current_depth + 1)
@@ -235,14 +237,17 @@ class GithubRepositoryReader(BaseReader):
                 print_if_verbose(
                     self._verbose, "\t" * current_depth + f"found blob {tree_obj.path}"
                 )
-                if self._ignore_file_extensions is not None:
-                    if get_file_extension(file_path) in self._ignore_file_extensions:
-                        print_if_verbose(
-                            self._verbose,
-                            "\t" * current_depth
-                            + f"ignoring blob {tree_obj.path} due to file extension",
-                        )
-                        continue
+                if (
+                    self._ignore_file_extensions is not None
+                    and get_file_extension(file_path)
+                    in self._ignore_file_extensions
+                ):
+                    print_if_verbose(
+                        self._verbose,
+                        "\t" * current_depth
+                        + f"ignoring blob {tree_obj.path} due to file extension",
+                    )
+                    continue
                 blobs_and_full_paths.append((tree_obj, file_path))
         return blobs_and_full_paths
 

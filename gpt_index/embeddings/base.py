@@ -37,8 +37,7 @@ def similarity(
     if mode == SimilarityMode.EUCLIDEAN:
         return float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
     elif mode == SimilarityMode.DOT_PRODUCT:
-        product = np.dot(embedding1, embedding2)
-        return product
+        return np.dot(embedding1, embedding2)
     else:
         product = np.dot(embedding1, embedding2)
         norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
@@ -100,8 +99,7 @@ class BaseEmbedding:
         Meant to be overriden for batch queries.
 
         """
-        result = [self._get_text_embedding(text) for text in texts]
-        return result
+        return [self._get_text_embedding(text) for text in texts]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings.
@@ -110,10 +108,9 @@ class BaseEmbedding:
         Meant to be overriden for batch queries.
 
         """
-        result = await asyncio.gather(
+        return await asyncio.gather(
             *[self._aget_text_embedding(text) for text in texts]
         )
-        return result
 
     def get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
@@ -208,9 +205,7 @@ class BaseEmbedding:
     @property
     def last_token_usage(self) -> int:
         """Get the last token usage."""
-        if self._last_token_usage is None:
-            return 0
-        return self._last_token_usage
+        return 0 if self._last_token_usage is None else self._last_token_usage
 
     @last_token_usage.setter
     def last_token_usage(self, value: int) -> None:

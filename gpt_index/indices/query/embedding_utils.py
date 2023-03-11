@@ -16,7 +16,7 @@ def get_top_k_embeddings(
 ) -> Tuple[List[float], List]:
     """Get top nodes by similarity to the query."""
     if embedding_ids is None:
-        embedding_ids = [i for i in range(len(embeddings))]
+        embedding_ids = list(range(len(embeddings)))
 
     similarity_fn = similarity_fn or default_similarity_fn
 
@@ -60,9 +60,7 @@ class SimilarityTracker:
     def find(self, node: Node) -> Optional[float]:
         """Find a node's similarity score."""
         node_hash = self._hash(node)
-        if node_hash not in self.lookup:
-            return None
-        return self.lookup[node_hash]
+        return None if node_hash not in self.lookup else self.lookup[node_hash]
 
     def get_zipped_nodes(self, nodes: List[Node]) -> List[Tuple[Node, Optional[float]]]:
         """Get a zipped list of nodes and their corresponding scores."""

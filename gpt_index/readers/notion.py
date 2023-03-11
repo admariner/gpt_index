@@ -29,14 +29,14 @@ class NotionPageReader(BaseReader):
         """Initialize with parameters."""
         if integration_token is None:
             integration_token = os.getenv(INTEGRATION_TOKEN_NAME)
-            if integration_token is None:
-                raise ValueError(
-                    "Must specify `integration_token` or set environment "
-                    "variable `NOTION_INTEGRATION_TOKEN`."
-                )
+        if integration_token is None:
+            raise ValueError(
+                "Must specify `integration_token` or set environment "
+                "variable `NOTION_INTEGRATION_TOKEN`."
+            )
         self.token = integration_token
         self.headers = {
-            "Authorization": "Bearer " + self.token,
+            "Authorization": f"Bearer {self.token}",
             "Content-Type": "application/json",
             "Notion-Version": "2022-06-28",
         }
@@ -61,16 +61,14 @@ class NotionPageReader(BaseReader):
 
                 cur_result_text_arr = []
                 if "rich_text" in result_obj:
-                    for rich_text in result_obj["rich_text"]:
-                        # skip if doesn't have text object
-                        if "text" in rich_text:
-                            text = rich_text["text"]["content"]
-                            prefix = "\t" * num_tabs
-                            cur_result_text_arr.append(prefix + text)
-
-                result_block_id = result["id"]
+                    cur_result_text_arr.extend(
+                        "\t" * num_tabs + rich_text["text"]["content"]
+                        for rich_text in result_obj["rich_text"]
+                        if "text" in rich_text
+                    )
                 has_children = result["has_children"]
                 if has_children:
+                    result_block_id = result["id"]
                     children_text = self._read_block(
                         result_block_id, num_tabs=num_tabs + 1
                     )
@@ -85,8 +83,7 @@ class NotionPageReader(BaseReader):
             else:
                 cur_block_id = data["next_cursor"]
 
-        result_lines = "\n".join(result_lines_arr)
-        return result_lines
+        return "\n".join(result_lines_arr)
 
     def read_page(self, page_id: str) -> str:
         """Read a page."""
@@ -102,12 +99,7 @@ class NotionPageReader(BaseReader):
             json=query_dict,
         )
         data = res.json()
-        page_ids = []
-        for result in data["results"]:
-            page_id = result["id"]
-            page_ids.append(page_id)
-
-        return page_ids
+        return [result["id"] for result in data["results"]]
 
     def search(self, query: str) -> List[str]:
         """Search Notion page given a text query."""
@@ -122,10 +114,7 @@ class NotionPageReader(BaseReader):
                 query_dict["start_cursor"] = next_cursor
             res = requests.post(SEARCH_URL, headers=self.headers, json=query_dict)
             data = res.json()
-            for result in data["results"]:
-                page_id = result["id"]
-                page_ids.append(page_id)
-
+            page_ids.extend(result["id"] for result in data["results"])
             if data["next_cursor"] is None:
                 done = True
                 break
@@ -151,14 +140,9 @@ class NotionPageReader(BaseReader):
         if database_id is not None:
             # get all the pages in the database
             page_ids = self.query_database(database_id)
-            for page_id in page_ids:
-                page_text = self.read_page(page_id)
-                docs.append(Document(page_text, extra_info={"page_id": page_id}))
-        else:
-            for page_id in page_ids:
-                page_text = self.read_page(page_id)
-                docs.append(Document(page_text, extra_info={"page_id": page_id}))
-
+        for page_id in page_ids:
+            page_text = self.read_page(page_id)
+            docs.append(Document(page_text, extra_info={"page_id": page_id}))
         return docs
 
 

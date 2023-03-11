@@ -43,12 +43,12 @@ class SQLDatabase(LangchainSQLDatabase):
         """Get table info for a single table."""
         # same logic as table_info, but with specific table names
         template = "Table '{table_name}' has columns: {columns}."
-        columns = []
-        for column in self._inspector.get_columns(table_name):
-            columns.append(f"{column['name']} ({str(column['type'])})")
+        columns = [
+            f"{column['name']} ({str(column['type'])})"
+            for column in self._inspector.get_columns(table_name)
+        ]
         column_str = ", ".join(columns)
-        table_str = template.format(table_name=table_name, columns=column_str)
-        return table_str
+        return template.format(table_name=table_name, columns=column_str)
 
     def insert_into_table(self, table_name: str, data: dict) -> None:
         """Insert data into a table."""

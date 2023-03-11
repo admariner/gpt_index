@@ -48,19 +48,14 @@ class GPTSimpleVectorIndexQuery(GPTVectorStoreIndexQuery):
         # NOTE: composability on top of other vector stores (pinecone/weaviate)
         # was already broken in this form.
         if simple_vector_store_data_dict is None:
-            if len(index_struct.embeddings_dict) > 0:
-                simple_vector_store_data_dict = {
-                    "embedding_dict": index_struct.embeddings_dict,
-                }
-                vector_store = SimpleVectorStore(
-                    simple_vector_store_data_dict=simple_vector_store_data_dict
-                )
-            else:
+            if len(index_struct.embeddings_dict) <= 0:
                 raise ValueError("Vector store is required for vector store query.")
-        else:
-            vector_store = SimpleVectorStore(
-                simple_vector_store_data_dict=simple_vector_store_data_dict
-            )
+            simple_vector_store_data_dict = {
+                "embedding_dict": index_struct.embeddings_dict,
+            }
+        vector_store = SimpleVectorStore(
+            simple_vector_store_data_dict=simple_vector_store_data_dict
+        )
         super().__init__(index_struct=index_struct, vector_store=vector_store, **kwargs)
 
 

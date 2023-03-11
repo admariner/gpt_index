@@ -87,7 +87,7 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(cls) -> Dict[str, Type[BaseGPTIndexQuery]]:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTKeywordTableGPTQuery,
@@ -155,12 +155,11 @@ class BaseGPTKeywordTableIndex(BaseGPTIndex[KeywordTable]):
 
     def _delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a document."""
-        # get set of ids that correspond to node
-        node_idxs_to_delete = set()
-        for node_idx, node in self._index_struct.text_chunks.items():
-            if node.ref_doc_id != doc_id:
-                continue
-            node_idxs_to_delete.add(node_idx)
+        node_idxs_to_delete = {
+            node_idx
+            for node_idx, node in self._index_struct.text_chunks.items()
+            if node.ref_doc_id == doc_id
+        }
         for node_idx in node_idxs_to_delete:
             del self._index_struct.text_chunks[node_idx]
 
@@ -191,8 +190,7 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
             self.keyword_extract_template,
             text=text,
         )
-        keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
-        return keywords
+        return extract_keywords_given_response(response, start_token="KEYWORDS:")
 
     async def _async_extract_keywords(self, text: str) -> Set[str]:
         """Extract keywords from text."""
@@ -200,5 +198,4 @@ class GPTKeywordTableIndex(BaseGPTKeywordTableIndex):
             self.keyword_extract_template,
             text=text,
         )
-        keywords = extract_keywords_given_response(response, start_token="KEYWORDS:")
-        return keywords
+        return extract_keywords_given_response(response, start_token="KEYWORDS:")
