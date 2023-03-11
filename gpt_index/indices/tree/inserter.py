@@ -58,52 +58,50 @@ class GPTIndexInserter:
         )
         self.index_graph.insert_under_parent(text_node, parent_node)
 
-        # if under num_children limit, then we're fine
         if len(self.index_graph.get_children(parent_node)) <= self.num_children:
             return
-        else:
-            # perform consolidation
-            cur_graph_nodes = self.index_graph.get_children(parent_node)
-            cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
-            # this layer is all leaf nodes, consolidate and split leaf nodes
-            cur_node_index = self.index_graph.size
-            # consolidate and split leaf nodes in half
-            # TODO: do better splitting (with a GPT prompt etc.)
-            half1 = cur_graph_node_list[: len(cur_graph_nodes) // 2]
-            half2 = cur_graph_node_list[len(cur_graph_nodes) // 2 :]
+        # perform consolidation
+        cur_graph_nodes = self.index_graph.get_children(parent_node)
+        cur_graph_node_list = get_sorted_node_list(cur_graph_nodes)
+        # this layer is all leaf nodes, consolidate and split leaf nodes
+        cur_node_index = self.index_graph.size
+        # consolidate and split leaf nodes in half
+        # TODO: do better splitting (with a GPT prompt etc.)
+        half1 = cur_graph_node_list[: len(cur_graph_nodes) // 2]
+        half2 = cur_graph_node_list[len(cur_graph_nodes) // 2 :]
 
-            text_chunk1 = self._prompt_helper.get_text_from_nodes(
-                half1, prompt=self.summary_prompt
-            )
-            summary1, _ = self._llm_predictor.predict(
-                self.summary_prompt, context_str=text_chunk1
-            )
-            node1 = Node(
-                text=summary1,
-                index=cur_node_index,
-                child_indices={n.index for n in half1},
-            )
+        text_chunk1 = self._prompt_helper.get_text_from_nodes(
+            half1, prompt=self.summary_prompt
+        )
+        summary1, _ = self._llm_predictor.predict(
+            self.summary_prompt, context_str=text_chunk1
+        )
+        node1 = Node(
+            text=summary1,
+            index=cur_node_index,
+            child_indices={n.index for n in half1},
+        )
 
-            text_chunk2 = self._prompt_helper.get_text_from_nodes(
-                half2, prompt=self.summary_prompt
-            )
-            summary2, _ = self._llm_predictor.predict(
-                self.summary_prompt, context_str=text_chunk2
-            )
-            node2 = Node(
-                text=summary2,
-                index=cur_node_index + 1,
-                child_indices={n.index for n in half2},
-            )
+        text_chunk2 = self._prompt_helper.get_text_from_nodes(
+            half2, prompt=self.summary_prompt
+        )
+        summary2, _ = self._llm_predictor.predict(
+            self.summary_prompt, context_str=text_chunk2
+        )
+        node2 = Node(
+            text=summary2,
+            index=cur_node_index + 1,
+            child_indices={n.index for n in half2},
+        )
 
             # insert half1 and half2 as new children of parent_node
             # first remove child indices from parent node
-            if parent_node is not None:
-                parent_node.child_indices = set()
-            else:
-                self.index_graph.root_nodes = {}
-            self.index_graph.insert_under_parent(node1, parent_node)
-            self.index_graph.insert_under_parent(node2, parent_node)
+        if parent_node is None:
+            self.index_graph.root_nodes = {}
+        else:
+            parent_node.child_indices = set()
+        self.index_graph.insert_under_parent(node1, parent_node)
+        self.index_graph.insert_under_parent(node2, parent_node)
 
     def _insert_node(
         self, text_chunk: str, doc: BaseDocument, parent_node: Optional[Node]

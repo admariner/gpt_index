@@ -25,7 +25,7 @@ def mock_extract_kg_triplets_response(
     """Generate 1 or more fake triplets."""
     response = ""
     if max_triplets is not None:
-        for i in range(max_triplets):
+        for _ in range(max_triplets):
             response += "(This is, a mock, triplet)\n"
     else:
         response += "(This is, a mock, triplet)\n"

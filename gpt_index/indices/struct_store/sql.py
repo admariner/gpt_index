@@ -98,19 +98,18 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         index_struct = self.index_struct_cls()
         if len(documents) == 0:
             return index_struct
-        else:
-            data_extractor = SQLStructDatapointExtractor(
-                self._llm_predictor,
-                self._text_splitter,
-                self.schema_extract_prompt,
-                self.output_parser,
-                self.sql_database,
-                table_name=self._table_name,
-                table=self._table,
-                ref_doc_id_column=self._ref_doc_id_column,
-            )
-            for d in documents:
-                data_extractor.insert_datapoint_from_document(d)
+        data_extractor = SQLStructDatapointExtractor(
+            self._llm_predictor,
+            self._text_splitter,
+            self.schema_extract_prompt,
+            self.output_parser,
+            self.sql_database,
+            table_name=self._table_name,
+            table=self._table,
+            ref_doc_id_column=self._ref_doc_id_column,
+        )
+        for d in documents:
+            data_extractor.insert_datapoint_from_document(d)
         return index_struct
 
     def _insert(self, document: BaseDocument, **insert_kwargs: Any) -> None:
@@ -128,7 +127,7 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         data_extractor.insert_datapoint_from_document(document)
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(cls) -> Dict[str, Type[BaseGPTIndexQuery]]:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTNLStructStoreIndexQuery,
@@ -178,10 +177,9 @@ class GPTSQLStructStoreIndex(BaseGPTStructStoreIndex[SQLStructTable]):
         sql_context_container = SQLContextContainer.from_dict(
             result_dict["sql_context_container"]
         )
-        result_obj = super().load_from_string(
+        return super().load_from_string(
             index_string, sql_context_container=sql_context_container, **kwargs
         )
-        return result_obj
 
     def save_to_string(self, **save_kwargs: Any) -> str:
         """Save to string.

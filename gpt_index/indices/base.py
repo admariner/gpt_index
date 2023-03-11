@@ -93,13 +93,7 @@ class BaseGPTIndex(Generic[IS]):
         self._docstore = docstore or DocumentStore()
         self._index_registry = index_registry or IndexRegistry()
 
-        if index_struct is not None:
-            if not isinstance(index_struct, self.index_struct_cls):
-                raise ValueError(
-                    f"index_struct must be of type {self.index_struct_cls}"
-                )
-            self._index_struct = index_struct
-        else:
+        if index_struct is None:
             documents = cast(Sequence[DOCUMENTS_INPUT], documents)
             documents = self._process_documents(
                 documents, self._docstore, self._index_registry
@@ -107,6 +101,12 @@ class BaseGPTIndex(Generic[IS]):
             self._validate_documents(documents)
             # TODO: introduce document store outside __init__ function
             self._index_struct = self.build_index_from_documents(documents)
+        elif not isinstance(index_struct, self.index_struct_cls):
+            raise ValueError(
+                f"index_struct must be of type {self.index_struct_cls}"
+            )
+        else:
+            self._index_struct = index_struct
         # update index registry and docstore with index_struct
         self._update_index_registry_and_docstore()
 
@@ -394,7 +394,6 @@ class BaseGPTIndex(Generic[IS]):
                 recursive=True,
                 use_async=use_async,
             )
-            return query_runner.query(query_str, self._index_struct)
         else:
             self._preprocess_query(mode_enum, query_kwargs)
             # TODO: pass in query config directly
@@ -414,7 +413,8 @@ class BaseGPTIndex(Generic[IS]):
                 recursive=False,
                 use_async=use_async,
             )
-            return query_runner.query(query_str, self._index_struct)
+
+        return query_runner.query(query_str, self._index_struct)
 
     async def aquery(
         self,
@@ -457,7 +457,6 @@ class BaseGPTIndex(Generic[IS]):
                 recursive=True,
                 use_async=use_async,
             )
-            return await query_runner.aquery(query_str, self._index_struct)
         else:
             self._preprocess_query(mode_enum, query_kwargs)
             # TODO: pass in query config directly
@@ -477,7 +476,8 @@ class BaseGPTIndex(Generic[IS]):
                 recursive=False,
                 use_async=use_async,
             )
-            return await query_runner.aquery(query_str, self._index_struct)
+
+        return await query_runner.aquery(query_str, self._index_struct)
 
     @classmethod
     @abstractmethod

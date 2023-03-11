@@ -70,7 +70,7 @@ class QueryRunner(BaseQueryRunner):
         Also update with default arguments if not present.
 
         """
-        query_kwargs = {k: v for k, v in config.query_kwargs.items()}
+        query_kwargs = dict(config.query_kwargs.items())
         if "prompt_helper" not in query_kwargs:
             query_kwargs["prompt_helper"] = self._prompt_helper
         if "llm_predictor" not in query_kwargs:
@@ -100,7 +100,7 @@ class QueryRunner(BaseQueryRunner):
         # if recursive, pass self as query_runner to each individual query
         query_runner = self
         query_kwargs = self._get_query_kwargs(config)
-        query_obj = query_cls(
+        return query_cls(
             index_struct,
             **query_kwargs,
             query_runner=query_runner,
@@ -108,8 +108,6 @@ class QueryRunner(BaseQueryRunner):
             recursive=self._recursive,
             use_async=self._use_async,
         )
-
-        return query_obj
 
     def query(
         self,

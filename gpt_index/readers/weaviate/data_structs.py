@@ -64,8 +64,7 @@ class BaseWeaviateIndexStruct(Generic[IS]):
         class_name = cls._class_name(class_prefix)
         properties = cls._get_common_properties() + cls._get_properties()
         prop_names = [p["name"] for p in properties]
-        entry = get_by_id(client, object_id, class_name, prop_names)
-        return entry
+        return get_by_id(client, object_id, class_name, prop_names)
 
     @classmethod
     def create_schema(cls, client: Any, class_prefix: str) -> None:
@@ -124,10 +123,7 @@ class BaseWeaviateIndexStruct(Generic[IS]):
         parsed_result = parse_get_response(query_result)
         entries = parsed_result[class_name]
 
-        results: List[IS] = []
-        for entry in entries:
-            results.append(cls._entry_to_gpt_index(entry))
-
+        results: List[IS] = [cls._entry_to_gpt_index(entry) for entry in entries]
         return results
 
     @classmethod
@@ -184,16 +180,9 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
     def _entry_to_gpt_index(cls, entry: Dict) -> Node:
         """Convert to LlamaIndex list."""
         extra_info_str = entry["extra_info"]
-        if extra_info_str == "":
-            extra_info = None
-        else:
-            extra_info = json.loads(extra_info_str)
-
+        extra_info = None if extra_info_str == "" else json.loads(extra_info_str)
         node_info_str = entry["node_info"]
-        if node_info_str == "":
-            node_info = None
-        else:
-            node_info = json.loads(node_info_str)
+        node_info = None if node_info_str == "" else json.loads(node_info_str)
         return Node(
             text=entry["text"],
             doc_id=entry["doc_id"],
@@ -213,16 +202,11 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
         node_dict = node.to_dict()
         vector = node_dict.pop("embedding")
         extra_info = node_dict.pop("extra_info")
-        # json-serialize the extra_info
-        extra_info_str = ""
-        if extra_info is not None:
-            extra_info_str = json.dumps(extra_info)
+        extra_info_str = json.dumps(extra_info) if extra_info is not None else ""
         node_dict["extra_info"] = extra_info_str
         # json-serialize the node_info
         node_info = node_dict.pop("node_info")
-        node_info_str = ""
-        if node_info is not None:
-            node_info_str = json.dumps(node_info)
+        node_info_str = json.dumps(node_info) if node_info is not None else ""
         node_dict["node_info"] = node_info_str
 
         # TODO: account for existing nodes that are stored
@@ -269,9 +253,7 @@ class WeaviateNode(BaseWeaviateIndexStruct[Node]):
 
         client = cast(Client, client)
         validate_client(client)
-        index_ids = []
         with client.batch as batch:
             for node in nodes:
                 index_id = cls._from_gpt_index(client, node, class_prefix, batch=batch)
-        index_ids.append(index_id)
-        return index_ids
+        return [index_id]

@@ -113,16 +113,17 @@ class ResponseBuilder:
         )
         text_chunks = refine_text_splitter.split_text(text_chunk)
         for cur_text_chunk in text_chunks:
-            if not self._streaming:
-                response, _ = self.llm_predictor.predict(
+            response, _ = (
+                self.llm_predictor.stream(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
-            else:
-                response, _ = self.llm_predictor.stream(
+                if self._streaming
+                else self.llm_predictor.predict(
                     refine_template,
                     context_msg=cur_text_chunk,
                 )
+            )
             logging.debug(f"> Refined response: {response}")
         return response
 
@@ -146,7 +147,7 @@ class ResponseBuilder:
                     context_str=cur_text_chunk,
                 )
                 logging.debug(f"> Initial response: {response}")
-            elif response is None and self._streaming:
+            elif response is None:
                 response, _ = self.llm_predictor.stream(
                     text_qa_template,
                     context_str=cur_text_chunk,

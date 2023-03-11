@@ -70,8 +70,9 @@ class Prompt:
 
         # validate all prompts in prompt selector
         all_lc_prompts = [self.prompt_selector.default_prompt]
-        for _, prompt in self.prompt_selector.conditionals:
-            all_lc_prompts.append(prompt)
+        all_lc_prompts.extend(
+            prompt for _, prompt in self.prompt_selector.conditionals
+        )
         for lc_prompt in all_lc_prompts:
             if set(lc_prompt.input_variables) != set(self.input_variables):
                 raise ValueError(
@@ -101,7 +102,7 @@ class Prompt:
         Return an instance of itself.
 
         """
-        for k in kwargs.keys():
+        for k in kwargs:
             if k not in self.input_variables:
                 raise ValueError(
                     f"Invalid input variable: {k}, not found in input_variables"
@@ -125,11 +126,11 @@ class Prompt:
         """
         lc_prompt = prompt.get_langchain_prompt(llm=llm)
         tmpl_vars = lc_prompt.input_variables
-        format_dict = {}
-        for var in tmpl_vars:
-            if var not in prompt.partial_dict:
-                format_dict[var] = f"{{{var}}}"
-
+        format_dict = {
+            var: f"{{{var}}}"
+            for var in tmpl_vars
+            if var not in prompt.partial_dict
+        }
         template_str = prompt.format(llm=llm, **format_dict)
         cls_obj: PMT = cls(template_str, **prompt.prompt_kwargs)
         return cls_obj
@@ -144,7 +145,7 @@ class Prompt:
 
     def format(self, llm: Optional[BaseLanguageModel] = None, **kwargs: Any) -> str:
         """Format the prompt."""
-        kwargs.update(self.partial_dict)
+        kwargs |= self.partial_dict
         lc_prompt = self.get_langchain_prompt(llm=llm)
         return lc_prompt.format(**kwargs)
 

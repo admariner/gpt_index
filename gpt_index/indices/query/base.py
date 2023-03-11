@@ -238,21 +238,19 @@ class BaseGPTIndexQuery(Generic[IS]):
 
     def _give_response_for_nodes(self, query_str: str) -> RESPONSE_TEXT_TYPE:
         """Give response for nodes."""
-        response = self.response_builder.get_response(
+        return self.response_builder.get_response(
             query_str,
             mode=self._response_mode,
             **self._response_kwargs,
         )
-        return response
 
     async def _agive_response_for_nodes(self, query_str: str) -> RESPONSE_TEXT_TYPE:
         """Give response for nodes."""
-        response = await self.response_builder.aget_response(
+        return await self.response_builder.aget_response(
             query_str,
             mode=self._response_mode,
             **self._response_kwargs,
         )
-        return response
 
     def get_nodes_and_similarities_for_response(
         self, query_bundle: QueryBundle
@@ -328,7 +326,7 @@ class BaseGPTIndexQuery(Generic[IS]):
                 source_nodes=self.response_builder.get_sources(),
                 extra_info=response_extra_info,
             )
-        elif response_str is None or isinstance(response_str, Generator):
+        elif isinstance(response_str, Generator):
             return StreamingResponse(
                 response_str,
                 source_nodes=self.response_builder.get_sources(),

@@ -183,18 +183,20 @@ class QdrantVectorStore(VectorStore):
             collection_name=self._collection_name,
             query_vector=query_embedding,
             limit=cast(int, similarity_top_k),
-            query_filter=None
-            if not doc_ids
-            else Filter(
+            query_filter=Filter(
                 must=[
                     Filter(
                         should=[
-                            FieldCondition(key="doc_id", match=MatchValue(value=doc_id))
+                            FieldCondition(
+                                key="doc_id", match=MatchValue(value=doc_id)
+                            )
                             for doc_id in doc_ids
                         ],
                     )
                 ]
-            ),
+            )
+            if doc_ids
+            else None,
         )
 
         logging.debug(f"> Top {len(response)} nodes:")

@@ -31,10 +31,7 @@ def documents() -> List[Document]:
 
 def mock_tokenizer(text: str) -> List[str]:
     """Mock tokenizer."""
-    if text == "":
-        return []
-    tokens = text.split(" ")
-    return tokens
+    return text.split(" ") if text else []
 
 
 @patch_common

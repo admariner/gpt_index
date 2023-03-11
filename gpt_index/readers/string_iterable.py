@@ -25,8 +25,4 @@ class StringIterableReader(BaseReader):
 
     def load_data(self, texts: List[str]) -> List[Document]:
         """Load the data."""
-        results = []
-        for text in texts:
-            results.append(Document(text))
-
-        return results
+        return [Document(text) for text in texts]

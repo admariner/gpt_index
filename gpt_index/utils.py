@@ -174,4 +174,4 @@ def retry_on_exceptions_with_backoff(
 
 def truncate_text(text: str, max_length: int) -> str:
     """Truncate text to a maximum length."""
-    return text[: max_length - 3] + "..."
+    return f"{text[:max_length - 3]}..."

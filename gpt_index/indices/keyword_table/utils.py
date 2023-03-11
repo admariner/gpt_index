@@ -59,9 +59,7 @@ def extract_keywords_given_response(
     results = []
     response = response.strip()  # Strip newlines from responses.
 
-    if response.startswith(start_token):
-        response = response[len(start_token) :]
-
+    response = response.removeprefix(start_token)
     keywords = response.split(",")
     for k in keywords:
         rk = k

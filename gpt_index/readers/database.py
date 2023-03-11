@@ -90,6 +90,5 @@ class DatabaseReader(BaseReader):
             else:
                 result = connection.execute(text(query))
 
-            for item in result.fetchall():
-                documents.append(Document(item[0]))
+            documents.extend(Document(item[0]) for item in result.fetchall())
         return documents

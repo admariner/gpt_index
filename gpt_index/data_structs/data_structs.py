@@ -59,10 +59,11 @@ class Node(IndexStruct):
     def get_text(self) -> str:
         """Get text."""
         text = super().get_text()
-        result_text = (
-            text if self.extra_info_str is None else f"{self.extra_info_str}\n\n{text}"
+        return (
+            text
+            if self.extra_info_str is None
+            else f"{self.extra_info_str}\n\n{text}"
         )
-        return result_text
 
     @classmethod
     def get_type(cls) -> str:
@@ -280,17 +281,12 @@ class KG(IndexStruct):
         # NOTE: return a single node for now
         if keyword not in self.rel_map:
             return []
-        texts = []
-        for obj, rel in self.rel_map[keyword]:
-            texts.append(str((keyword, rel, obj)))
-        return texts
+        return [str((keyword, rel, obj)) for obj, rel in self.rel_map[keyword]]
 
     def get_rel_map_tuples(self, keyword: str) -> List[Tuple[str, str]]:
         """Get the corresponding knowledge for a given keyword."""
         # NOTE: return a single node for now
-        if keyword not in self.rel_map:
-            return []
-        return self.rel_map[keyword]
+        return [] if keyword not in self.rel_map else self.rel_map[keyword]
 
     def get_node_ids(self, keyword: str, depth: int = 1) -> List[str]:
         """Get the corresponding knowledge for a given keyword."""
@@ -305,9 +301,8 @@ class KG(IndexStruct):
 
         node_ids: List[str] = []
         for keyword in keywords:
-            for node_id in self.table.get(keyword, set()):
-                node_ids.append(node_id)
-            # TODO: Traverse (with depth > 1)
+            node_ids.extend(iter(self.table.get(keyword, set())))
+                # TODO: Traverse (with depth > 1)
         return node_ids
 
     @classmethod

@@ -257,8 +257,7 @@ class OpenAIEmbedding(BaseEmbedding):
             if key not in _TEXT_MODE_MODEL_DICT:
                 raise ValueError(f"Invalid mode, model combination: {key}")
             engine = _TEXT_MODE_MODEL_DICT[key]
-        embeddings = get_embeddings(texts, engine=engine)
-        return embeddings
+        return get_embeddings(texts, engine=engine)
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
@@ -269,5 +268,4 @@ class OpenAIEmbedding(BaseEmbedding):
             if key not in _TEXT_MODE_MODEL_DICT:
                 raise ValueError(f"Invalid mode, model combination: {key}")
             engine = _TEXT_MODE_MODEL_DICT[key]
-        embeddings = await aget_embeddings(texts, engine=engine)
-        return embeddings
+        return await aget_embeddings(texts, engine=engine)

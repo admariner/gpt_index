@@ -76,7 +76,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
         )
 
     @classmethod
-    def get_query_map(self) -> Dict[str, Type[BaseGPTIndexQuery]]:
+    def get_query_map(cls) -> Dict[str, Type[BaseGPTIndexQuery]]:
         """Get query map."""
         return {
             QueryMode.DEFAULT: GPTKGTableQuery,
@@ -125,7 +125,7 @@ class GPTKnowledgeGraphIndex(BaseGPTIndex[KG]):
                     index_struct.upsert_triplet(triplet, n)
 
                 if self.include_embeddings:
-                    for i, triplet in enumerate(triplets):
+                    for triplet in triplets:
                         self._embed_model.queue_text_for_embeddding(
                             str(triplet), str(triplet)
                         )

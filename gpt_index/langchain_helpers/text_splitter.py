@@ -105,13 +105,7 @@ class TokenTextSplitter(TextSplitter):
 
     def _postprocess_splits(self, docs: List[TextSplit]) -> List[TextSplit]:
         """Post-process splits."""
-        # TODO: prune text splits, remove empty spaces
-        new_docs = []
-        for doc in docs:
-            if doc.text_chunk.replace(" ", "") == "":
-                continue
-            new_docs.append(doc)
-        return new_docs
+        return [doc for doc in docs if doc.text_chunk.replace(" ", "") != ""]
 
     def split_text(self, text: str, extra_info_str: Optional[str] = None) -> List[str]:
         """Split incoming text and return chunks."""
@@ -122,7 +116,7 @@ class TokenTextSplitter(TextSplitter):
         self, text: str, extra_info_str: Optional[str] = None
     ) -> List[TextSplit]:
         """Split incoming text and return chunks with overlap size."""
-        if text == "":
+        if not text:
             return []
 
         # NOTE: Consider extra info str that will be added to the chunk at query time
@@ -171,7 +165,7 @@ class TokenTextSplitter(TextSplitter):
                 overlap = 0
                 # after first round, check if last chunk ended after this chunk begins
                 if prev_idx > 0 and prev_idx > start_idx:
-                    overlap = sum([len(splits[i]) for i in range(start_idx, prev_idx)])
+                    overlap = sum(len(splits[i]) for i in range(start_idx, prev_idx))
 
                 docs.append(
                     TextSplit(self._separator.join(splits[start_idx:cur_idx]), overlap)
@@ -205,18 +199,16 @@ class TokenTextSplitter(TextSplitter):
         overlap = 0
         # after first round, check if last chunk ended after this chunk begins
         if prev_idx > start_idx:
-            overlap = sum([len(splits[i]) for i in range(start_idx, prev_idx)]) + len(
-                range(start_idx, prev_idx)
-            )
+            overlap = sum(
+                len(splits[i]) for i in range(start_idx, prev_idx)
+            ) + len(range(start_idx, prev_idx))
         docs.append(TextSplit(self._separator.join(splits[start_idx:cur_idx]), overlap))
 
-        # run postprocessing to remove blank spaces
-        docs = self._postprocess_splits(docs)
-        return docs
+        return self._postprocess_splits(docs)
 
     def truncate_text(self, text: str) -> str:
         """Truncate text in order to fit the underlying chunk size."""
-        if text == "":
+        if not text:
             return ""
         # First we naively split the large input into a bunch of smaller ones.
         splits = text.split(self._separator)

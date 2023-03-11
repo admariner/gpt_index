@@ -91,18 +91,14 @@ class StreamingResponse:
     def __str__(self) -> str:
         """Convert to string representation."""
         if self.response_txt is None and self.response_gen is not None:
-            response_txt = ""
-            for text in self.response_gen:
-                response_txt += text
+            response_txt = "".join(self.response_gen)
             self.response_txt = response_txt
         return self.response_txt or "None"
 
     def get_response(self) -> Response:
         """Get a standard response object."""
         if self.response_txt is None and self.response_gen is not None:
-            response_txt = ""
-            for text in self.response_gen:
-                response_txt += text
+            response_txt = "".join(self.response_gen)
             self.response_txt = response_txt
         return Response(self.response_txt, self.source_nodes, self.extra_info)
 

@@ -140,6 +140,6 @@ class FaissVectorStore(VectorStore):
             return VectorStoreQueryResult(similarities=[], ids=[])
 
         # returned dimension is 1 x k
-        node_idxs = list([str(i) for i in indices[0]])
+        node_idxs = [str(i) for i in indices[0]]
 
         return VectorStoreQueryResult(similarities=dists, ids=node_idxs)

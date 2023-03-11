@@ -90,10 +90,7 @@ class SQLContextContainerBuilder:
 
     def _get_context_dict(self, ignore_db_schema: bool) -> Dict[str, str]:
         """Get full context dict."""
-        if ignore_db_schema:
-            return self.context_dict
-        else:
-            return self.full_context_dict
+        return self.context_dict if ignore_db_schema else self.full_context_dict
 
     def derive_index_from_context(
         self,
@@ -107,11 +104,10 @@ class SQLContextContainerBuilder:
         for table_name, context_str in full_context_dict.items():
             doc = Document(context_str, extra_info={"table_name": table_name})
             context_docs.append(doc)
-        index = index_cls(
+        return index_cls(
             documents=context_docs,
             **index_kwargs,
         )
-        return index
 
     def query_index_for_context(
         self,
