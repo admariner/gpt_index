@@ -17,6 +17,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     ContentBlock,
     AudioBlock,
+    DocumentBlock,
 )
 
 
@@ -178,6 +179,18 @@ def _content_block_to_bedrock_format(
         return {
             "text": block.text,
         }
+    elif isinstance(block, DocumentBlock):
+        if not block.data:
+            file_buffer = block.resolve_document()
+            data = block._get_b64_bytes(file_buffer)
+        else:
+            data = block.data
+
+        format = block.guess_format() or "pdf"
+        title = block.title
+        return {
+            "document": {"format": format, "name": title, "source": {"bytes": data}}
+        }
     elif isinstance(block, ImageBlock):
         if role != MessageRole.USER:
             logger.warning(
@@ -228,6 +241,7 @@ def messages_to_converse_messages(
         Tuple of:
         - List of AWS Bedrock Converse messages
         - System prompt
+
     """
     converse_messages = []
     system_prompt = ""
@@ -314,6 +328,7 @@ def tools_to_converse_tools(tools: List["BaseTool"]) -> Dict[str, Any]:
 
     Returns:
         AWS Bedrock Converse tools
+
     """
     converse_tools = []
     for tool in tools:
@@ -512,7 +527,11 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
 
     Returns:
         Joined dictionary
+
     """
+    # These keys should be replaced rather than concatenated
+    REPLACE_KEYS = {"toolUseId", "name", "input"}
+
     new_dict = dict1.copy()
     for key, value in dict2.items():
         if key not in new_dict:
@@ -520,6 +539,9 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
         else:
             if isinstance(value, dict):
                 new_dict[key] = join_two_dicts(new_dict[key], value)
+            elif key in REPLACE_KEYS:
+                # Replace instead of concatenate for special keys
+                new_dict[key] = value
             else:
                 new_dict[key] += value
     return new_dict
