@@ -160,7 +160,7 @@ def empty_retriever_agent():
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_basic_workflow(calculator_agent, retriever_agent):
     """Test basic workflow initialization and validation."""
     workflow = AgentWorkflow(
@@ -174,7 +174,7 @@ async def test_basic_workflow(calculator_agent, retriever_agent):
     assert "retriever" in workflow.agents
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_requires_root_agent():
     """Test that workflow requires exactly one root agent."""
     with pytest.raises(ValueError, match="Exactly one root agent must be provided"):
@@ -202,7 +202,7 @@ async def test_workflow_requires_root_agent():
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_execution(calculator_agent, retriever_agent):
     """Test basic workflow execution with agent handoff."""
     workflow = AgentWorkflow(
@@ -235,7 +235,7 @@ async def test_workflow_execution(calculator_agent, retriever_agent):
     assert "8" in str(response.response)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_execution_empty(empty_calculator_agent, retriever_agent):
     """Test basic workflow execution with agent handoff."""
     workflow = AgentWorkflow(
@@ -254,7 +254,7 @@ async def test_workflow_execution_empty(empty_calculator_agent, retriever_agent)
         await handler
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_handoff_empty(calculator_agent, empty_retriever_agent):
     """Test basic workflow execution with agent handoff."""
     workflow = AgentWorkflow(
@@ -273,7 +273,7 @@ async def test_workflow_handoff_empty(calculator_agent, empty_retriever_agent):
     assert response.response.content is None
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_invalid_handoff():
     """Test handling of invalid agent handoff."""
     agent1 = FunctionAgent(
@@ -321,14 +321,14 @@ async def test_invalid_handoff():
     assert "Agent invalid_agent not found" in str(events)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_with_state():
     """Test workflow with state management."""
 
-    async def modify_state(ctx: Context):
-        state = await ctx.get("state")
+    async def modify_state(random_arg: str, ctx_val: Context):
+        state = await ctx_val.get("state")
         state["counter"] += 1
-        await ctx.set("state", state)
+        await ctx_val.set("state", state)
         return f"State updated to {state}"
 
     agent = FunctionAgent(
@@ -345,7 +345,7 @@ async def test_workflow_with_state():
                             ToolSelection(
                                 tool_id="one",
                                 tool_name="modify_state",
-                                tool_kwargs={},
+                                tool_kwargs={"random_arg": "hello"},
                             )
                         ]
                     },
@@ -373,3 +373,6 @@ async def test_workflow_with_state():
 
     response = await handler
     assert response is not None
+
+    state = await handler.ctx.get("state")
+    assert state["counter"] == 1
