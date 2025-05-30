@@ -69,6 +69,7 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         return {"messages": []}
@@ -118,7 +119,7 @@ def test_predict_and_call_throws_if_error_on_tool(
         llm.predict_and_call(tools=[person_tool], error_on_tool_error=True)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_apredict_and_call(
     person_tool: FunctionTool, person_tool_selection: ToolSelection
 ) -> None:
@@ -128,7 +129,7 @@ async def test_apredict_and_call(
     assert all(tool_output.is_error for tool_output in response.sources)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_apredict_and_call_throws_if_error_on_tool(
     person_tool: FunctionTool, person_tool_selection: ToolSelection
 ) -> None:
