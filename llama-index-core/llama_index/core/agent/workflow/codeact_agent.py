@@ -4,7 +4,6 @@ import uuid
 from typing import Awaitable, Callable, List, Sequence, Union, Optional
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
-from llama_index.core.agent.workflow.single_agent_workflow import SingleAgentRunnerMixin
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentOutput,
@@ -19,7 +18,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.memory import BaseMemory
 from llama_index.core.objects import ObjectRetriever
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.core.tools import AsyncBaseTool, FunctionTool
+from llama_index.core.tools import BaseTool, FunctionTool
 from llama_index.core.workflow import Context
 
 DEFAULT_CODE_ACT_PROMPT = """You are a helpful AI assistant that can write and execute Python code to solve problems.
@@ -60,7 +59,7 @@ Reminder: Always place your Python code between <execute>...</execute> tags when
 EXECUTE_TOOL_NAME = "execute"
 
 
-class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
+class CodeActAgent(BaseWorkflowAgent):
     """
     A workflow agent that can execute code.
     """
@@ -86,7 +85,7 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
         name: str = "code_act_agent",
         description: str = "A workflow agent that can execute code.",
         system_prompt: Optional[str] = None,
-        tools: Optional[Sequence[AsyncBaseTool]] = None,
+        tools: Optional[List[Union[BaseTool, Callable]]] = None,
         tool_retriever: Optional[ObjectRetriever] = None,
         can_handoff_to: Optional[List[str]] = None,
         llm: Optional[LLM] = None,
@@ -113,7 +112,7 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
             code_execute_fn=code_execute_fn,
         )
 
-    def _get_tool_fns(self, tools: Sequence[AsyncBaseTool]) -> List[Callable]:
+    def _get_tool_fns(self, tools: Sequence[BaseTool]) -> List[Callable]:
         """Get the tool functions while validating that they are valid tools for the CodeActAgent."""
         callables = []
         for tool in tools:
@@ -148,6 +147,7 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
         Returns:
             Extracted code or None if no code found
+
         """
         # Match content between <execute> and </execute> tags
         execute_pattern = r"<execute>(.*?)</execute>"
@@ -158,7 +158,7 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
         return None
 
-    def _get_tool_descriptions(self, tools: Sequence[AsyncBaseTool]) -> str:
+    def _get_tool_descriptions(self, tools: Sequence[BaseTool]) -> str:
         """
         Generate tool descriptions for the system prompt using tool metadata.
 
@@ -167,6 +167,7 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
         Returns:
             Tool descriptions as a string
+
         """
         tool_descriptions = []
 
@@ -189,7 +190,7 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
         self,
         ctx: Context,
         llm_input: List[ChatMessage],
-        tools: Sequence[AsyncBaseTool],
+        tools: Sequence[BaseTool],
         memory: BaseMemory,
     ) -> AgentOutput:
         """Take a single step with the code act agent."""
@@ -339,7 +340,8 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
     async def finalize(
         self, ctx: Context, output: AgentOutput, memory: BaseMemory
     ) -> AgentOutput:
-        """Finalize the code act agent.
+        """
+        Finalize the code act agent.
 
         Adds all in-progress messages to memory.
         """
