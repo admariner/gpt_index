@@ -1,4 +1,5 @@
-"""Milvus vector store index.
+"""
+Milvus vector store index.
 
 An index that is built within Milvus.
 
@@ -99,7 +100,7 @@ def _to_milvus_filter(
 
 
 def _get_index_metric_type(
-    func: Union[BaseSparseEmbeddingFunction, BaseMilvusBuiltInFunction]
+    func: Union[BaseSparseEmbeddingFunction, BaseMilvusBuiltInFunction],
 ):
     if isinstance(func, BM25BuiltInFunction):
         return "BM25"
@@ -116,7 +117,8 @@ similarity_metrics_map = {
 
 
 class MilvusVectorStore(BasePydanticVectorStore):
-    """The Milvus Vector Store.
+    """
+    The Milvus Vector Store.
 
     In this vector store we store the text, its embedding and
     a its metadata in a Milvus collection. This implementation
@@ -135,6 +137,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             stored. Defaults to "llamalection".
         overwrite (bool, optional): Whether to overwrite existing collection with same
             name. Defaults to False.
+        upsert_mode (bool, optional): Whether to upsert documents into existing collection with same node id. Defaults to False.
         doc_id_field (str, optional): The name of the doc_id field for the collection,
             defaults to DEFAULT_DOC_ID_KEY.
         text_key (str, optional): What key text is stored in in the passed collection.
@@ -213,6 +216,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             overwrite=True
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -227,6 +231,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     similarity_metric: str = "IP"
     consistency_level: str = "Session"
     overwrite: bool = False
+    upsert_mode: bool = False
     text_key: str = DEFAULT_TEXT_KEY
     output_fields: List[str] = Field(default_factory=list)
     index_config: Optional[dict]
@@ -256,6 +261,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         token: str = "",
         collection_name: str = "llamacollection",
         overwrite: bool = False,
+        upsert_mode: bool = False,
         collection_properties: Optional[dict] = None,
         doc_id_field: str = DEFAULT_DOC_ID_KEY,
         text_key: str = DEFAULT_TEXT_KEY,
@@ -288,6 +294,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             doc_id_field=doc_id_field,
             consistency_level=consistency_level,
             overwrite=overwrite,
+            upsert_mode=upsert_mode,
             text_key=text_key,
             output_fields=output_fields or [],
             index_config=index_config if index_config else {},
@@ -310,6 +317,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
             token=token,
             **kwargs,  # pass additional arguments such as server_pem_path
         )
+
+        # As of writing, milvus sets alias internally in the async client.
+        # This will cause an error if not removed.
+        kwargs.pop("alias", None)
+
         self._async_milvusclient = AsyncMilvusClient(
             uri=uri,
             token=token,
@@ -401,7 +413,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         return self._async_milvusclient
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add the embeddings and their nodes into Milvus.
+        """
+        Add the embeddings and their nodes into Milvus.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
@@ -412,6 +425,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[str]: List of ids inserted.
+
         """
         insert_list = []
         insert_ids = []
@@ -434,18 +448,23 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 if isinstance(
                     self.sparse_embedding_function, BaseSparseEmbeddingFunction
                 ):
-                    entry[
-                        self.sparse_embedding_field
-                    ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+                    entry[self.sparse_embedding_field] = (
+                        self.sparse_embedding_function.encode_documents([node.text])[0]
+                    )
                 else:  # BaseMilvusBuiltInFunction
                     pass
 
             insert_ids.append(node.node_id)
             insert_list.append(entry)
 
-        # Insert the data into milvus
+        if self.upsert_mode:
+            executor_wrapper = self.client.upsert
+        else:
+            executor_wrapper = self.client.insert
+
+        # Insert or Upsert the data into milvus
         for insert_batch in iter_batch(insert_list, self.batch_size):
-            self.client.insert(self.collection_name, insert_batch)
+            executor_wrapper(self.collection_name, insert_batch)
         if add_kwargs.get("force_flush", False):
             self.client.flush(self.collection_name)
         logger.debug(
@@ -481,18 +500,23 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 if isinstance(
                     self.sparse_embedding_function, BaseSparseEmbeddingFunction
                 ):
-                    entry[
-                        self.sparse_embedding_field
-                    ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+                    entry[self.sparse_embedding_field] = (
+                        self.sparse_embedding_function.encode_documents([node.text])[0]
+                    )
                 else:  # BaseMilvusBuiltInFunction
                     pass
 
             insert_ids.append(node.node_id)
             insert_list.append(entry)
 
-        # Insert the data into milvus
+        if self.upsert_mode:
+            executor_wrapper = self.aclient.upsert
+        else:
+            executor_wrapper = self.aclient.insert
+
+        # Insert or Upsert the data into milvus
         for insert_batch in iter_batch(insert_list, self.batch_size):
-            await self.aclient.insert(self.collection_name, insert_batch)
+            await executor_wrapper(self.collection_name, insert_batch)
         if add_kwargs.get("force_flush", False):
             raise NotImplementedError("force_flush is not supported in async mode.")
             # await self.aclient.flush(self.collection_name)
@@ -511,6 +535,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         Raises:
             MilvusException: Failed to delete the doc.
+
         """
         # Adds ability for multiple doc delete in future.
         doc_ids: List[str]
@@ -556,11 +581,13 @@ class MilvusVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
 
@@ -620,7 +647,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
-        """Get nodes by node ids or metadata filters.
+        """
+        Get nodes by node ids or metadata filters.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to retrieve. Defaults to None.
@@ -631,6 +659,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[BaseNode]:
+
         """
         if node_ids is None and filters is None:
             raise ValueError("Either node_ids or filters must be provided.")
@@ -693,7 +722,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         return nodes
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding
@@ -702,6 +732,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]]): list of node_ids to filter by
             output_fields (Optional[List[str]]): list of fields to return
             embedding_field (Optional[str]): name of embedding field
+
         """
         if query.mode == VectorStoreQueryMode.DEFAULT:
             pass
@@ -903,7 +934,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform MMR search.
         """
-        mmr_threshold = kwargs.get("mmr_threshold", None)
+        mmr_threshold = kwargs.get("mmr_threshold")
         if (
             kwargs.get("mmr_prefetch_factor") is not None
             and kwargs.get("mmr_prefetch_k") is not None
@@ -962,7 +993,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous MMR search.
         """
-        mmr_threshold = kwargs.get("mmr_threshold", None)
+        mmr_threshold = kwargs.get("mmr_threshold")
         if (
             kwargs.get("mmr_prefetch_factor") is not None
             and kwargs.get("mmr_prefetch_k") is not None
@@ -994,7 +1025,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         node_ids = []
         for node in nodes:
             node_embeddings.append(node["entity"]["embedding"])
-            node_ids.append(node["id"])
+            node_ids.append(self._get_id_from_hit(node))
+
         mmr_similarities, mmr_ids = get_top_k_mmr_embeddings(
             query_embedding=query.query_embedding,
             embeddings=node_embeddings,
@@ -1389,5 +1421,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
             nodes.append(node)
             similarities.append(hit["distance"])
-            ids.append(hit["id"])
+            ids.append(self._get_id_from_hit(hit))
         return nodes, similarities, ids
+
+    def _get_id_from_hit(self, hit: Dict) -> str:
+        if "id" in hit:
+            return hit["id"]
+        else:
+            return hit[next(iter(hit))]

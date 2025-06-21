@@ -31,7 +31,8 @@ from llama_index.agent.lats.types import (
 
 
 class LATSAgentWorker(CustomSimpleAgentWorker):
-    """Agent worker that performs a step of Language Agent Tree Search.
+    """
+    Agent worker that performs a step of Language Agent Tree Search.
 
     Source paper: https://arxiv.org/pdf/2310.04406v2.pdf.
 
@@ -93,7 +94,8 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
         node: SearchNode,
         task: Task,
     ) -> List[BaseReasoningStep]:
-        """Generate candidate for a given node.
+        """
+        Generate candidate for a given node.
 
         Generically we sample the action space to generate new candidate nodes.
 
@@ -105,7 +107,7 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
         # format react prompt
         formatted_prompt = self.chat_formatter.format(
             self.tools,
-            chat_history=task.memory.get(),
+            chat_history=await task.memory.aget(),
             current_reasoning=node.current_reasoning,
         )
         # run LLM
@@ -213,7 +215,8 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
     def _run_step(
         self, state: Dict[str, Any], task: Task, input: Optional[str] = None
     ) -> Tuple[AgentChatResponse, bool]:
-        """Run step.
+        """
+        Run step.
 
         Returns:
             Tuple of (agent_response, is_done)
@@ -224,7 +227,8 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
     async def _arun_step(
         self, state: Dict[str, Any], task: Task, input: Optional[str] = None
     ) -> Tuple[AgentChatResponse, bool]:
-        """Run step.
+        """
+        Run step.
 
         Returns:
             Tuple of (agent_response, is_done)
